@@ -1,0 +1,9 @@
+.venv
+.idea
+__pycache__
+*.pyc
+cocoindex.db
+.cocoindex.db
+.env
+msf_smart_evo-development
+/tmp/cocoindex_repos

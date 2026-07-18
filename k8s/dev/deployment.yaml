@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: realtime-code-indexing-v1
+  namespace: revo
+  labels:
+    app: realtime-code-indexing-v1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: realtime-code-indexing-v1
+  template:
+    metadata:
+      labels:
+        app: realtime-code-indexing-v1
+    spec:
+      serviceAccountName: sa-revo # Workload Identity mapping
+      containers:
+      - name: realtime-code-indexing-v1
+        image: trnbsm/realtime-code-indexing:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8000
+          protocol: TCP
+        envFrom:
+          - configMapRef:
+              name: realtime-code-indexing-v1
+        securityContext:
+          runAsNonRoot: false
+        readinessProbe:
+          httpGet:
+            path: /api/docs
+            port: 8000
+          initialDelaySeconds: 5
+        env:
+          - name: TZ
+            value: Asia/Jakarta
+      imagePullSecrets:
+        - name: dockerhub-secret-revo

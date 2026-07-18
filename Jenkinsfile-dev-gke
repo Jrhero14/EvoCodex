@@ -1,0 +1,117 @@
+import org.jenkinsci.plugins.pipeline.modeldefinition.Utils 
+
+pipeline {
+    agent {
+        kubernetes {
+            yaml '''
+apiVersion: v1
+kind: Pod
+spec:
+  containers:
+  - name: jnlp
+    image: jenkins/inbound-agent:latest
+
+  - name: docker
+    image: docker:24
+    command: ["sleep", "infinity"]
+    env:
+    - name: DOCKER_HOST
+      value: tcp://localhost:2375
+
+  - name: dind
+    image: docker:24-dind
+    securityContext:
+      privileged: true
+    env:
+    - name: DOCKER_TLS_CERTDIR
+      value: ""
+    args:
+      - "--host=tcp://0.0.0.0:2375"
+
+  # Use the official Google Cloud SDK image
+  - name: gcloud
+    image: google/cloud-sdk:slim
+    command: ["sleep", "infinity"]
+'''
+        }
+    }
+
+    environment {
+        docker_tag = "${BUILD_NUMBER}"
+        project_name = "trnbsm/realtime-code-indexing"
+        deployment_name = "realtime-code-indexing"
+        gke_namespace = "revo"
+    }
+
+    stages {
+        stage('Checkout'){
+            steps {
+                git url: scm.userRemoteConfigs[0].url,
+                    branch: scm.branches[0].name,
+                    credentialsId: scm.userRemoteConfigs[0].credentialsId
+
+                script {
+                    gitCommitId = sh(returnStdout: true, script: 'git rev-parse HEAD').trim()
+                    echo "Commit: ${gitCommitId}"
+                }
+            }
+        }
+
+        stage('Docker Build'){
+            steps {
+                container('docker') {
+                    sh '''
+                    docker version
+                    docker build -t ${project_name}:${BUILD_NUMBER} .
+                    '''
+                }
+            }
+        }
+
+        stage('Push Image'){
+            steps {
+                container('docker') {
+                    withCredentials([usernamePassword(
+                        credentialsId: 'dockerhub_trnbsm',
+                        usernameVariable: 'DOCKER_USER',
+                        passwordVariable: 'DOCKER_PASS'
+                    )]) {
+                        sh '''
+                        echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
+                        docker push ${project_name}:${BUILD_NUMBER}
+                        docker logout
+                        '''
+                    }
+                }
+            }
+        }
+
+        stage('Deploy GKE'){
+            steps {
+                container('gcloud') {
+                    withCredentials([file(credentialsId: 'gke-key', variable: 'GCP_KEY_FILE')]) {
+                        sh '''
+                        apt-get update
+                        apt-get install -y kubectl google-cloud-cli-gke-gcloud-auth-plugin
+                        gcloud auth activate-service-account --key-file="$GCP_KEY_FILE"
+
+                        gcloud container clusters get-credentials dev-digitalbanking \
+                          --region asia-southeast2 \
+                          --project nobu-ist
+
+                        kubectl config set-context --current --namespace=revo
+
+                        kubectl apply -f ./k8s/dev/configmap.yaml
+                        kubectl apply -f ./k8s/dev/service.yaml
+                        kubectl apply -f ./k8s/dev/deployment.yaml
+                        '''
+
+                        sh """
+                        kubectl set image deployment/${deployment_name}-v1 ${deployment_name}-v1=${project_name}:${docker_tag} --record
+                        """
+                    }
+                }
+            }
+        }
+    }
+}

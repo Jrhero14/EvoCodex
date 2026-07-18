@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: realtime-code-indexing-v1
+  namespace: revo
+data:
+  # Base Supabase Postgres URL (override if needed for SIT/UAT/PROD)
+  # POSTGRES_URL: "postgres://..."
+  
+  # Ensure the container outputs python logs in real-time
+  PYTHONUNBUFFERED: "1"

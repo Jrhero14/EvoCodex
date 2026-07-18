@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    container_name: evocodex_db
+    environment:
+      POSTGRES_USER: ${DB_USER:-user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-password}
+      POSTGRES_DB: ${DB_NAME:-dbname}
+    ports:
+      - "5432:5432"
+    volumes:
+      - evocodex_postgres_data:/var/lib/postgresql/data
+    restart: always
+
+  app:
+    # Ganti 'yourusername' dengan username Docker Hub Anda.
+    # End-user akan langsung men-download image ini dari internet.
+    image: yourusername/evocodex:latest
+    container_name: evocodex_app
+    depends_on:
+      - db
+    ports:
+      - "8000:8000"
+    environment:
+      # --- Konfigurasi Database (otomatis terhubung ke db di atas) ---
+      POSTGRES_URL: postgresql://${DB_USER:-user}:${DB_PASSWORD:-password}@db:5432/${DB_NAME:-dbname}
+      
+      # --- Authentication ---
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-ganti_dengan_secret_kuat}
+      OAUTH_CLIENT_SECRET: ${OAUTH_CLIENT_SECRET:-}
+      
+      # --- Integrasi AI & Gitlab ---
+      GITLAB_PAT: ${GITLAB_PAT:-}
+      GITLAB_WEBHOOK_SECRET: ${GITLAB_WEBHOOK_SECRET:-}
+      HF_TOKEN: ${HF_TOKEN:-}
+      GOOGLE_CLOUD_PROJECT: ${GOOGLE_CLOUD_PROJECT:-}
+      VERTEX_PROJECT: ${VERTEX_PROJECT:-}
+      
+      # Frontend Config yang mungkin dibutuhkan
+      VITE_API_URL: ${VITE_API_URL:-/api}
+    restart: always
+
+volumes:
+  evocodex_postgres_data:

@@ -1,0 +1,13 @@
+cocoindex[postgres,sentence_transformers]>=1.0.7
+asyncpg>=0.29.0
+pgvector>=0.4.1
+numpy
+python-dotenv>=1.0.1
+PyJWT[crypto]>=2.8.0
+bcrypt>=4.0.0
+httpx>=0.24.1
+fastapi
+uvicorn
+litellm
+google-cloud-aiplatform
+GitPython
