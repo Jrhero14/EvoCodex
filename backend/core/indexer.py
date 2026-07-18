@@ -46,6 +46,38 @@ from cocoindex.ops.litellm import LiteLLMEmbedder
 from cocoindex.ops.sentence_transformers import SentenceTransformerEmbedder
 from typing import Any
 
+import asyncio
+import time
+import cocoindex.ops.litellm
+
+# Monkey patch cocoindex litellm retry to limit to 3 attempts maximum
+async def custom_retry_litellm_call(operation, operation_name):
+    deadline = time.monotonic() + cocoindex.ops.litellm._EMBEDDING_RETRY_TIMEOUT_SECONDS
+    backoff = cocoindex.ops.litellm._EMBEDDING_RETRY_INITIAL_BACKOFF_SECONDS
+    attempt = 1
+    while attempt <= 3:
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            raise TimeoutError(f"{operation_name} did not succeed within timeout")
+        try:
+            return await asyncio.wait_for(operation(), timeout=remaining)
+        except Exception as e:
+            if not cocoindex.ops.litellm._is_retryable_litellm_error(e):
+                raise
+            if attempt >= 3:
+                raise RuntimeError(f"Max retries (3) reached for {operation_name}. Last error: {e}") from e
+            
+            delay = min(backoff, remaining)
+            cocoindex.ops.litellm._logger.warning(
+                "%s failed with transient error on attempt %d; retrying in %.1fs: %s",
+                operation_name, attempt, delay, e,
+            )
+            await asyncio.sleep(delay)
+            backoff = min(backoff * 2, cocoindex.ops.litellm._EMBEDDING_RETRY_MAX_BACKOFF_SECONDS)
+            attempt += 1
+
+cocoindex.ops.litellm._retry_litellm_call = custom_retry_litellm_call
+
 PG_DB = coco.ContextKey[asyncpg.Pool]("code_embedding_db")
 EMBEDDER = coco.ContextKey[Any]("embedder", detect_change=True)
 
