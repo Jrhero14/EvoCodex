@@ -10,7 +10,7 @@ export const useAuth = () => useContext(AuthContext);
  * Each role has a list of menu paths they can access.
  */
 const ROLE_MENU_ACCESS = {
-  admin: ['query', 'monitoring', 'database', 'projects', 'templates', 'users'],
+  admin: ['query', 'monitoring', 'database', 'projects', 'templates', 'users', 'settings'],
   maintener: ['query', 'monitoring', 'database', 'projects', 'templates'],
   guest: ['query', 'database', 'projects'],
 };

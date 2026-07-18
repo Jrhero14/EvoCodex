@@ -1,171 +1,147 @@
-<p align="center">
-  <a href="https://cocoindex.io/blogs/index-codebase-v1/" title="Index your codebase for AI agents with CocoIndex — Tree-sitter chunking, embeddings, and a live pgvector index">
-    <img src="https://cocoindex.io/blobs/docs-v1/img/examples/index-codebase/cover.png" alt="Real-time codebase indexing with CocoIndex and Tree-sitter — language-aware chunking, embeddings, semantic search, and a live vector index in plain async Python" width="100%" draggable="false"/>
-  </a>
-</p>
+# Evocodex
 
-<h1 align="center">Build Real-Time Codebase Indexing</h1>
+**Evocodex** is a real-time code indexing and semantic search platform designed to help developers and teams search through large codebases using natural language. It automatically syncs with your Git repositories (e.g., GitLab) via webhooks, embeds your code using AI models (Vertex AI or local embeddings), and stores the vector data in PostgreSQL with `pgvector` for lightning-fast semantic queries.
 
-<p align="center">
-  <b>A live, syntax-aware vector index over your repo — in ~100 lines of plain async Python.</b><br/>
-  Point it at a codebase, search it in natural language, and it re-embeds only what changes as you edit.
-</p>
+![Evocodex Landing Page](docs/landing-page-example.png)
 
-<p align="center">
-  <strong>Star us&nbsp;❤️&nbsp;→</strong>&nbsp;<a href="https://github.com/cocoindex-io/cocoindex" title="Star CocoIndex on GitHub"><picture><source media="(prefers-color-scheme: dark)" srcset="https://cocoindex.io/blobs/github/homepage/star-btn-small-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://cocoindex.io/blobs/github/homepage/star-btn-small-light.svg"><img src="https://cocoindex.io/blobs/github/homepage/star-btn-small-light.svg" alt="Star CocoIndex on GitHub" height="36" align="absmiddle"/></picture></a> &nbsp;·&nbsp;
-  <a href="https://cocoindex.io/docs/examples/index-codebase/" title="Read the CocoIndex documentation"><picture><source media="(prefers-color-scheme: dark)" srcset="https://cocoindex.io/blobs/github/homepage/docs-inline-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://cocoindex.io/blobs/github/homepage/docs-inline-light.svg"><img src="https://cocoindex.io/blobs/github/homepage/docs-inline-light.svg" alt="CocoIndex documentation" height="36" align="absmiddle"/></picture></a> &nbsp;·&nbsp;
-  <a href="https://discord.com/invite/zpA9S2DR7s" title="Join the CocoIndex Discord"><picture><source media="(prefers-color-scheme: dark)" srcset="https://cocoindex.io/blobs/github/homepage/discord-inline-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://cocoindex.io/blobs/github/homepage/discord-inline-light.svg"><img src="https://cocoindex.io/blobs/github/homepage/discord-inline-light.svg" alt="Join the CocoIndex Discord" height="36" align="absmiddle"/></picture></a>
-</p>
+## ✨ Features
 
-<div align="center">
+- **Real-Time Indexing**: Listens to Git webhooks (Push events) and automatically triggers background jobs to clone the latest code, parse it, and generate embeddings.
+- **Semantic Search Engine**: Search your codebase using natural language. No more struggling with exact keyword matches.
+- **Dynamic User Interface**: Built with React and Vite, featuring a sleek, modern UI with abstract animations (Wave Mesh) and intuitive dashboards.
+- **OAuth SSO & Internal Auth**: Secure your platform using builtin JWT authentication or connect to an external OAuth provider (e.g., Keycloak).
+- **In-App Settings Management**: Modify environment variables, AI credentials, and webhook secrets directly from a secure admin UI dashboard without needing to restart the server.
+- **Role-Based Access Control (RBAC)**: Manage users with distinct roles (`admin`, `maintener`, `guest`) to restrict access to settings, user management, and webhook logs.
+- **Monitoring & History**: Real-time webhook logs and a comprehensive build history dashboard to track indexing jobs and their outcomes.
 
-[![GitHub](https://img.shields.io/github/stars/cocoindex-io/cocoindex?style=flat-square&label=stars&color=FB6A76)](https://github.com/cocoindex-io/cocoindex)
-[![PyPI version](https://img.shields.io/pypi/v/cocoindex?style=flat-square&label=pypi&color=E59A63)](https://pypi.org/project/cocoindex/)
-[![Discord](https://img.shields.io/discord/1314801574169673738?style=flat-square&logo=discord&logoColor=white&label=discord&color=5865F2)](https://discord.com/invite/zpA9S2DR7s)
-[![License](https://img.shields.io/badge/license-Apache--2.0-5B5BD6?style=flat-square)](https://opensource.org/licenses/Apache-2.0)
+## 🏗️ Architecture
 
-</div>
+- **Backend**: Python, FastAPI, Asyncpg, Pydantic
+- **Frontend**: React.js, Vite, Tailwind CSS, Lucide React
+- **Database**: PostgreSQL (with `pgvector` extension)
+- **AI/Embedding**: `cocoindex` CLI integration (supporting Google Vertex AI and Local HuggingFace models)
 
-<p align="center">
-  📕 <b><a href="https://cocoindex.io/docs/examples/index-codebase/">Documentation</a></b> &nbsp;·&nbsp; 📘 <b><a href="https://cocoindex.io/blogs/index-codebase-v1/">Step-by-step tutorial</a></b> &nbsp;·&nbsp; 🎬 <b><a href="https://youtu.be/G3WstvhHO24?si=Bnxu67Ax5Lv8b-J2">Watch on YouTube</a></b>
-</p>
+---
 
-<br/>
+## 🚀 Getting Started (Docker / Production)
 
-Build a codebase index that's **always up to date**. CocoIndex has built-in, native Tree-sitter chunking, so it splits along real code structure — functions, classes, blocks — embeds each chunk, and keeps the index fresh with **incremental processing**: a one-line edit re-embeds one chunk, not the repo. You declare the transformation in native Python and your own types — `target_state = transformation(source_state)` — and a Rust engine does the incremental processing, change tracking, and managed targets underneath.
+The easiest way to run Evocodex in a production or isolated environment is using Docker Compose.
 
-## Use cases
+### 1. Prerequisites
+- Docker and Docker Compose installed on your machine.
 
-<p align="center">
-  <img src="https://cocoindex.io/blobs/docs-v1/img/examples/index-codebase/usecase-agents.png" alt="Use cases for an always-fresh codebase index: coding agents, code-review agents, semantic code search, and MCP for editors" width="100%"/>
-</p>
+### 2. Configuration
+Copy the sample environment file to create your own configuration:
+```bash
+cp .env.example .env
+```
+*(See the **Environment Variables** section below for details on what to configure).*
 
-A wide range of applications can be built on an effective codebase index that is always up to date:
+### 3. Run the Services
+Run the following command to build the images and start the containers in the background:
+```bash
+docker-compose up -d --build
+```
+This will spin up:
+- **db**: PostgreSQL database with `pgvector` enabled (Port `5432`).
+- **app**: The combined backend API and static frontend server (Port `8000`).
 
-- **Semantic code context** for AI coding agents like Claude, Codex, and Gemini CLI.
-- **MCP** for code editors such as Cursor, Windsurf, and VSCode.
-- **Context-aware code search** — semantic code search, natural-language code retrieval.
-- **Code-review agents** — automated analysis, quality checks, pull-request summarization.
-- **Refactoring & migration** — large-scale, automated code changes.
-- **SRE workflows** — index infra-as-code, deploy scripts, and configs for rapid root-cause analysis and change-impact assessment.
-- **Living design docs** — generate documentation from code and keep it current.
+You can now access the application at `http://localhost:8000`.
 
-## Why CocoIndex for codebase indexing
+---
 
-<p align="center">
-  <img src="https://cocoindex.io/blobs/docs-v1/img/examples/index-codebase/why-cocoindex.png" alt="Why CocoIndex: syntax-aware Tree-sitter chunking, incremental updates, live mode, plain Python, and a consistent index and query path" width="100%"/>
-</p>
+## 🛠️ Local Development Setup
 
-- **Syntax-aware chunking, built in.** Tree-sitter splits along real code structure, so retrieval returns whole units, not fragments cut mid-statement. Every major language; unknown types fall back to plain text.
-- **Incremental by default.** `@coco.fn(memo=True)` skips unchanged files and reuses embeddings for unchanged chunks; the target upserts only the rows that moved and deletes orphans. Edit one function → one chunk is re-embedded.
-- **Live updates.** `live=True` + `cocoindex update -L` keeps watching the filesystem and applies changes with low latency — always-fresh context for an agent.
-- **Plain Python, your stack.** Swap the embedding model (12k+ on Hugging Face), the chunking, or the [vector store](https://cocoindex.io/docs/). No DSL.
-- **Consistent index & query.** The same embedder is shared by the indexing and query paths, so what you index is what you search.
+If you wish to contribute to the code or run it locally without Docker, follow these steps.
 
-## How it works
+### Prerequisites
+- Python 3.10+
+- Node.js 18+
+- PostgreSQL 15+ with the `pgvector` extension installed.
 
-<p align="center">
-  <img src="https://cocoindex.io/blobs/docs-v1/img/examples/index-codebase/flow-v1.png" alt="CocoIndex code-embedding flow: localfs.walk_dir source → per-file processing component (detect language, Tree-sitter RecursiveSplitter, coco.map → embed each chunk → declare CodeEmbedding rows) → Postgres pgvector target with a cosine vector index" width="72%"/>
-</p>
-
-Walk a repo → detect language → split along the **syntax tree** with Tree-sitter → embed each chunk → upsert into Postgres (pgvector). With `live=True`, the source keeps watching and the index stays fresh as you code. The whole indexing path is the snippet below — read it top-to-bottom in [`main.py`](main.py):
-
-```python
-@coco.fn(memo=True)
-async def process_file(file: FileLike, table: postgres.TableTarget[CodeEmbedding]) -> None:
-    text = await file.read_text()
-    language = detect_code_language(filename=str(file.file_path.path.name))
-    chunks = _splitter.split(text, chunk_size=1000, min_chunk_size=300,
-                             chunk_overlap=300, language=language)   # Tree-sitter, syntax-aware
-    id_gen = IdGenerator()
-    await coco.map(process_chunk, chunks, file.file_path.path, id_gen, table)
-
-@coco.fn
-async def process_chunk(chunk, filename, id_gen, table) -> None:
-    embedding = await coco.use_context(EMBEDDER).embed(chunk.text)
-    table.declare_row(row=CodeEmbedding(
-        id=await id_gen.next_id(chunk.text), filename=str(filename), code=chunk.text,
-        embedding=embedding, start_line=chunk.start.line, end_line=chunk.end.line,
-    ))
-
-@coco.fn
-async def app_main(sourcedir: pathlib.Path) -> None:
-    table = await postgres.mount_table_target(PG_DB, table_name=TABLE_NAME, ...)
-    table.declare_vector_index(column="embedding")
-    files = localfs.walk_dir(sourcedir, recursive=True,
-                             path_matcher=PatternFilePathMatcher(included_patterns=["**/*.py", ...]),
-                             live=True)
-    await coco.mount_each(process_file, files.items(), table)
+### 1. Database Setup
+Create a PostgreSQL database and enable the `pgvector` extension:
+```sql
+CREATE DATABASE evocodex;
+\c evocodex
+CREATE EXTENSION vector;
 ```
 
-<p align="center">
-  📘 <b><a href="https://cocoindex.io/blogs/index-codebase-v1/">Full tutorial →</a></b><br/>
-  Step-by-step walkthrough of the data model, the lifespan, chunking, embedding, the App, and exactly what happens on each kind of change.
-</p>
-
-## Run it
-
-**1. Postgres + pgvector.** [Install Postgres](https://cocoindex.io/docs/getting_started/installation#-install-postgres) with the `pgvector` extension if you don't have one, then point the example at it:
-
-```sh
-export POSTGRES_URL="postgres://cocoindex:cocoindex@localhost/cocoindex"
+### 2. Backend Setup
+Navigate to the project root and create a virtual environment:
+```bash
+python -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+pip install -r requirements.txt
 ```
 
-CocoIndex keeps its own incremental-processing state in a local file (`COCOINDEX_DB`, default `./cocoindex.db`; see [`.env`](.env)). By default the flow indexes **this repository** — set `COCOINDEX_SOURCE_PATH` to index any other codebase.
-
-**2. Install dependencies:**
-
-```sh
-pip install -e .
+Run database migrations to seed the initial tables and default roles:
+```bash
+python -m backend.scripts.run_migrations
 ```
 
-**3. Build / update the index** (writes rows into Postgres) — pick one:
-
-```sh
-cocoindex update main       # catch-up: scan, sync changes, exit
-cocoindex update -L main    # live: catch up, then keep watching for edits
+Start the FastAPI development server:
+```bash
+uvicorn backend.api.app:app --host 0.0.0.0 --port 8080 --reload
 ```
+The API documentation (Swagger) will be available at `http://localhost:8080/api/docs`.
 
-**4. Query it** — semantic search from the terminal:
-
-```sh
-python main.py "your query"   # one-shot
-python main.py                # interactive loop
+### 3. Frontend Setup
+Open a new terminal and navigate to the frontend directory:
+```bash
+cd frontend
+npm install
+npm run dev
 ```
+The Vite development server will start, typically accessible at `http://localhost:5173`.
 
-<p align="center">
-  <img src="https://cocoindex.io/blobs/docs-v1/img/examples/index-codebase/search-results.png" alt="Semantic search results in the terminal: similarity score, filename, matched line range, and the code snippet" width="80%"/>
-</p>
+---
 
-Each result carries `start_line`/`end_line`, so hits point straight at the lines that matched. Query uses pgvector's `<=>` cosine distance, turned into a similarity score, and reuses the **same embedder** as the indexing path.
+## ⚙️ Environment Variables (`.env`)
 
-## Incremental & real-time updates
+Here are the key environment variables you need to configure. Note that many of these can also be edited later directly via the **Settings Dashboard** in the app.
 
-<p align="center">
-  <img src="https://cocoindex.io/blobs/docs-v1/img/examples/index-codebase/incremental-diff.png" alt="A file edited and re-chunked: unchanged chunks are reused with no re-embedding, a removed chunk's row is deleted, and a new chunk is embedded and inserted" width="78%"/>
-</p>
+```ini
+# Application & Database
+POSTGRES_URL=postgresql://evocodex:codexevo12345@localhost:5432/evocodex
+SERVER_PORT=8000
 
-Edit a file and re-run (or leave `cocoindex update -L` running): unchanged chunks are **reused** with no re-embedding, a removed chunk's row is **deleted**, and a new chunk is **embedded and inserted** — only the delta moves. That's what keeps the index cheap to maintain and always fresh for an agent.
+# OAuth Config
+ENABLE_OAUTH=true
+OAUTH_PROVIDER=keycloak
+OAUTH_CLIENT_ID=your-client-id
+OAUTH_CLIENT_SECRET=your-client-secret
+OAUTH_WELL_KNOWN_URL=https://your-auth-server.com/realms/realm-name/.well-known/openid-configuration
 
-## Want it production-ready, not DIY?
+# AI & Embedding Providers
+COCOINDEX_EMBEDDING_PROVIDER=vertex  # Options: 'vertex' or 'local'
+VERTEX_PROJECT=your-gcp-project-id
+GOOGLE_CLOUD_PROJECT=your-gcp-project-id
+# HF_TOKEN=your-huggingface-token # Only required if using local private models
 
-[**CocoIndex Code**](https://github.com/cocoindex-io/cocoindex-code) is this exact pipeline — AST-aware chunking, incremental re-index, local embeddings — hardened and packaged as a CLI and an MCP server you can plug straight into a coding or code-review agent.
-
-<p align="center">
-  <a href="https://github.com/cocoindex-io/cocoindex-code" title="CocoIndex Code — semantic code search for coding agents, as a CLI and MCP server">
-    <img src="https://cocoindex.io/blobs/docs-v1/img/examples/index-codebase/cocoindex-code.png" alt="CocoIndex Code — semantic code search for coding agents, as a CLI and MCP server" width="80%"/>
-  </a>
-</p>
-
-```sh
-npx skills add cocoindex-io/cocoindex-code      # Claude Code skill, then /ccc
-claude mcp add cocoindex-code -- ccc mcp        # MCP: Codex, OpenCode, Cursor, any client
-ccc index && ccc search "where we embed chunks" # CLI
+# GitLab Configurations
+GITLAB_PAT=your-gitlab-personal-access-token
+GITLAB_WEBHOOK_SECRET=your-webhook-secret-string
 ```
 
 ---
 
-<p align="center">
-  If this made your agents smarter, <a href="https://github.com/cocoindex-io/cocoindex"><b>give CocoIndex a star ⭐</b></a> — it helps a lot.<br/>
-  <a href="https://cocoindex.io/docs/examples/index-codebase/">Documentation</a> · <a href="https://cocoindex.io/blogs/index-codebase-v1/">Walkthrough</a> · <a href="https://discord.com/invite/zpA9S2DR7s">Discord</a> · <a href="https://github.com/cocoindex-io/cocoindex/tree/main/examples"><b>See all examples →</b></a>
-</p>
+## 💡 How to Use
+
+1. **Login**: Access the web UI. Login using the default internal credentials or via SSO if enabled.
+2. **Settings**: Navigate to the Settings tab to ensure your GitLab PAT, Webhook Secrets, and AI Provider credentials are correct.
+3. **Register Webhook**: 
+   - Go to your GitLab repository -> Settings -> Webhooks.
+   - Add your Evocodex webhook URL: `https://your-domain.com/api/gitlab_webhook`
+   - Paste the Webhook Secret matching your configuration.
+   - Set the trigger for **Push events**.
+   - *(Optional)* Pass `?templateCode=framework-name` in the URL if you want specific codebase templates handled.
+4. **Monitor Indexing**: Push some code to your repository. Navigate to the **Monitoring** tab in Evocodex to watch the background indexing job run in real-time.
+5. **Search**: Once the job succeeds, navigate to the **Query** tab and start asking questions about your codebase in natural language!
+
+---
+
+## 🔒 User Roles
+- **admin**: Full access to all menus, settings, and destructive operations.
+- **maintener**: Can create, edit, and delete records, but does not have access to the global Settings page.
+- **guest**: View-only access to Query, Database, and Projects. Cannot trigger manual indexing or delete data.

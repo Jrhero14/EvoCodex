@@ -99,8 +99,20 @@ export const loginApi = async (username, password) => {
   return api.post('login', { username, password });
 };
 
+export const fetchPublicSettings = async () => {
+  const res = await api.get('settings/public');
+  return res.data;
+};
+
 export const fetchMonitoringHistory = async () => {
   const res = await api.get('monitoring/history');
+  return res.data;
+};
+
+export const fetchWebhookLogs = async (limit = 50, offset = 0) => {
+  const res = await api.get('monitoring/webhooks', {
+    params: { limit, offset }
+  });
   return res.data;
 };
 
@@ -254,6 +266,22 @@ export const fetchRecentJobs = async () => {
 
 export const fetchJobLogs = async (jobId) => {
   const res = await api.get(`jobs/${jobId}/logs`);
+  return res.data;
+};
+
+// -- Settings --
+export const fetchSettings = async () => {
+  const res = await api.get('settings');
+  return res.data;
+};
+
+export const updateSetting = async (key, value) => {
+  const res = await api.put(`settings/${key}`, { value });
+  return res.data;
+};
+
+export const regenerateSetting = async (key) => {
+  const res = await api.post(`settings/${key}/regenerate`);
   return res.data;
 };
 

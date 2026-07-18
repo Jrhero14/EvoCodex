@@ -5,7 +5,7 @@ from fastapi import Depends, HTTPException, Header
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import jwt
 
-from backend.core.config import JWT_SECRET_KEY, AGENT_API_KEY
+from backend.core.config import JWT_SECRET_KEY, AGENT_API_KEY, get_config
 from cocoindex.ops.litellm import LiteLLMEmbedder
 
 # ── Shared State (set during app lifespan) ──────────────────────────────────
@@ -24,7 +24,7 @@ def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
     try:
         payload = jwt.decode(
             token,
-            JWT_SECRET_KEY,
+            get_config("JWT_SECRET_KEY", JWT_SECRET_KEY),
             algorithms=["HS256"],
             options={"verify_aud": False},
         )
@@ -37,7 +37,8 @@ def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
 
 def verify_agent_api_key(x_api_key: str = Header(..., description="Secret API Key for Agent")):
     """Verify static API key for M2M agent access."""
-    if not x_api_key or x_api_key != AGENT_API_KEY:
+    current_key = get_config("AGENT_API_KEY", AGENT_API_KEY)
+    if not x_api_key or x_api_key != current_key:
         raise HTTPException(status_code=401, detail="Invalid API Key")
     return True
 
@@ -50,7 +51,7 @@ ROLE_PERMISSIONS = {
     "admin": "*",  # full access
     "maintener": {
         # Can do everything EXCEPT access /users and /roles endpoints
-        "deny": {"/users", "/roles"},
+        "deny": {"/users", "/roles", "/settings"},
     },
     "guest": {
         # Can only GET (view) on specific endpoints

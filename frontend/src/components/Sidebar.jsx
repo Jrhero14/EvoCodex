@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { Search, Activity, Database, Folder, LayoutTemplate, Users, RefreshCw } from 'lucide-react';
+import { Search, Activity, Database, Folder, LayoutTemplate, Users, RefreshCw, Settings as SettingsIcon } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { fetchRecentJobs } from '../services/api';
 
@@ -135,17 +135,18 @@ const Sidebar = () => {
             Templates
           </NavLink>
         )}
-        {hasAccess('users') && (
+
+        {hasAccess('settings') && (
           <NavLink
-            to="/users"
+            to="/settings"
             className={({ isActive }) =>
               `flex items-center gap-3 px-3 py-2 rounded-md font-medium text-[15px] transition-colors ${
                 isActive ? 'bg-primary text-white' : 'text-textMain hover:bg-bgHover'
               }`
             }
           >
-            <Users size={18} />
-            Users
+            <SettingsIcon size={18} />
+            Settings
           </NavLink>
         )}
       </nav>

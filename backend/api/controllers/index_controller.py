@@ -1,7 +1,8 @@
 """Index controller — repo indexing and GitLab webhook endpoints."""
 
+import json
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, Header
-from fastapi.responses import PlainTextResponse
+from fastapi.responses import JSONResponse, PlainTextResponse
 import pathlib
 
 from backend.api import dependencies as deps
@@ -69,18 +70,43 @@ async def gitlab_webhook(
     request: Request,
     background_tasks: BackgroundTasks,
     x_gitlab_token: str | None = Header(default=None),
+    templateCode: str | None = None,
 ):
-    from backend.core.config import GITLAB_WEBHOOK_SECRET
+    from backend.core.config import GITLAB_WEBHOOK_SECRET, get_config
+
+    async def _log_webhook(status_code: int, response_data: dict, payload_data: dict | None):
+        try:
+            req_ip = request.client.host if request.client else ""
+            req_headers = json.dumps(dict(request.headers))
+            payload_str = json.dumps(payload_data) if payload_data else None
+            response_str = json.dumps(response_data)
+            async with deps.db_pool.acquire() as conn:
+                await conn.execute(
+                    "INSERT INTO webhook_logs (request_ip, headers, payload, status_code, response) VALUES ($1, $2, $3, $4, $5)",
+                    req_ip, req_headers, payload_str, status_code, response_str
+                )
+        except Exception as e:
+            print(f"Failed to log webhook: {e}")
+
+    try:
+        payload = await request.json()
+    except Exception:
+        resp = {"detail": "Invalid JSON payload"}
+        await _log_webhook(400, resp, None)
+        return JSONResponse(status_code=400, content=resp)
 
     # Verify Secret Token
-    if not GITLAB_WEBHOOK_SECRET or x_gitlab_token != GITLAB_WEBHOOK_SECRET:
-        raise HTTPException(status_code=401, detail="Invalid X-Gitlab-Token")
-
-    payload = await request.json()
+    webhook_secret = get_config("GITLAB_WEBHOOK_SECRET", GITLAB_WEBHOOK_SECRET)
+    if not webhook_secret or x_gitlab_token != webhook_secret:
+        resp = {"detail": "Invalid X-Gitlab-Token"}
+        await _log_webhook(401, resp, payload)
+        return JSONResponse(status_code=401, content=resp)
 
     # We only care about push events
     if payload.get("object_kind") != "push":
-        return {"message": "Ignored. Event is not a push."}
+        resp = {"message": "Ignored. Event is not a push."}
+        await _log_webhook(200, resp, payload)
+        return JSONResponse(status_code=200, content=resp)
 
     try:
         project_name = payload["project"]["name"]
@@ -100,9 +126,24 @@ async def gitlab_webhook(
             )
             
         if not record:
-            # Auto-detect patterns and create project
             from backend.services.project_service import add_project, auto_detect_project_patterns
-            included, excluded = await auto_detect_project_patterns(repo_url, branch)
+            included, excluded = None, None
+            
+            # Use template if requested
+            if templateCode:
+                async with deps.db_pool.acquire() as conn:
+                    template_row = await conn.fetchrow(
+                        "SELECT included_patterns, excluded_patterns FROM project_templates WHERE template_code = $1",
+                        templateCode
+                    )
+                    if template_row:
+                        included = template_row["included_patterns"]
+                        excluded = template_row["excluded_patterns"]
+                        
+            # Fallback to auto-detect
+            if not included or not excluded:
+                included, excluded = await auto_detect_project_patterns(repo_url, branch)
+                
             await add_project(deps.db_pool, repo_url, branch, included, excluded)
 
         repo_payload = RepoPayload(
@@ -115,18 +156,19 @@ async def gitlab_webhook(
         background_tasks.add_task(
             index_service.run_indexing_job, job_id, repo_payload, deps.db_pool
         )
-        return {
+        resp = {
             "message": f"GitLab push event received. "
             f"Indexing {project_name} (branch: {branch}) in background with job ID {job_id}."
         }
+        await _log_webhook(200, resp, payload)
+        return JSONResponse(status_code=200, content=resp)
     except KeyError as e:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Invalid GitLab payload structure. Missing: {str(e)}",
-        )
+        resp = {"detail": f"Invalid GitLab payload structure. Missing: {str(e)}"}
+        await _log_webhook(400, resp, payload)
+        return JSONResponse(status_code=400, content=resp)
 
 
-@router.get("/projects/{project_name}/{branch}/jobs")
+@router.get("/projects/{project_name}/{branch:path}/jobs")
 async def get_project_jobs(project_name: str, branch: str, token: dict = Depends(deps.verify_token)):
     async with deps.db_pool.acquire() as conn:
         rows = await conn.fetch(

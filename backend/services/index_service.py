@@ -10,7 +10,7 @@ import subprocess
 import asyncpg
 import git
 
-from backend.core.config import GITLAB_PAT
+from backend.core.config import GITLAB_PAT, get_config
 from backend.dtos.index_dto import RepoPayload
 from backend.services.ws_broadcaster import job_broadcaster
 
@@ -76,8 +76,9 @@ def _sync_clone_and_index(
         log_write("PHASE 1: GIT SYNCHRONIZATION", section=True)
         try:
             auth_url = payload.repo_url
-            if GITLAB_PAT and auth_url.startswith("https://"):
-                auth_url = auth_url.replace("https://", f"https://oauth2:{GITLAB_PAT}@")
+            pat = get_config("GITLAB_PAT", GITLAB_PAT)
+            if pat and auth_url.startswith("https://"):
+                auth_url = auth_url.replace("https://", f"https://oauth2:{pat}@")
 
             if repo_path.exists():
                 log_write(f"Found existing repository at {repo_path}")

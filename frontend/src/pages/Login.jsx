@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Eye, EyeOff, LogIn, KeyRound, User, Shield } from 'lucide-react';
 
-import { loginApi, getApiBaseUrl } from '../services/api';
+import { loginApi, getApiBaseUrl, fetchPublicSettings } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
 const floatingSnippets = [
@@ -18,6 +18,101 @@ const floatingSnippets = [
   'return cosine_similarity()',
 ];
 
+const WaveMesh = () => {
+  const canvasRef = React.useRef(null);
+
+  React.useEffect(() => {
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    let animationFrameId;
+    let time = 0;
+
+    const resize = () => {
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = canvas.clientWidth * dpr;
+      canvas.height = canvas.clientHeight * dpr;
+      ctx.scale(dpr, dpr);
+    };
+
+    window.addEventListener('resize', resize);
+    resize();
+
+    const draw = () => {
+      const width = canvas.clientWidth;
+      const height = canvas.clientHeight;
+      ctx.clearRect(0, 0, width, height);
+      
+      time += 0.008;
+      
+      const lines = 18;
+      for (let i = 0; i < lines; i++) {
+        ctx.beginPath();
+        // Shift phase for each line
+        const phase = i * 0.4;
+        // Different amplitude and spacing for each line
+        const amplitude = 30 + (i * 8);
+        
+        for (let x = 0; x <= width; x += 8) {
+          // Combine multiple sine waves for a complex, 3D-like organic mesh
+          const freq1 = (x * 0.002) + time * 0.8 + phase;
+          const freq2 = (x * 0.005) - time * 0.3;
+          const freq3 = (x * 0.001) + time * 0.1;
+          
+          const yOffset = Math.sin(freq1) * amplitude 
+                        + Math.cos(freq2) * (amplitude * 0.4)
+                        + Math.sin(freq3) * 60;
+          
+          const y = (height / 2) + yOffset;
+          
+          if (x === 0) {
+            ctx.moveTo(x, y);
+          } else {
+            ctx.lineTo(x, y);
+          }
+        }
+        
+        // Gradient stroke for a glowing electric feel
+        const gradient = ctx.createLinearGradient(0, 0, width, 0);
+        gradient.addColorStop(0, `rgba(100, 200, 255, 0)`);
+        gradient.addColorStop(0.3, `rgba(100, 220, 255, ${0.12 - (i * 0.005)})`);
+        gradient.addColorStop(0.7, `rgba(140, 255, 255, ${0.12 - (i * 0.005)})`);
+        gradient.addColorStop(1, `rgba(100, 200, 255, 0)`);
+        
+        ctx.strokeStyle = gradient;
+        ctx.lineWidth = 1.2;
+        ctx.stroke();
+      }
+      
+      // Floating glowing particles
+      for(let p = 0; p < 60; p++) {
+         const pX = (Math.sin(p * 74.3 + time * 0.2) * 0.5 + 0.5) * width;
+         const pY = (Math.sin(p * 31.3 + time * 0.15) * 0.5 + 0.5) * height;
+         ctx.beginPath();
+         const radius = Math.abs(Math.sin(time * 0.5 + p)) * 2;
+         ctx.arc(pX, pY, radius, 0, Math.PI * 2);
+         ctx.fillStyle = `rgba(150, 230, 255, ${Math.sin(time + p) * 0.4 + 0.1})`;
+         ctx.fill();
+      }
+
+      animationFrameId = requestAnimationFrame(draw);
+    };
+
+    draw();
+
+    return () => {
+      window.removeEventListener('resize', resize);
+      cancelAnimationFrame(animationFrameId);
+    };
+  }, []);
+
+  return (
+    <canvas 
+      ref={canvasRef} 
+      className="absolute inset-0 w-full h-full z-0 pointer-events-none" 
+    />
+  );
+};
+
 const Login = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -25,9 +120,18 @@ const Login = () => {
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [focusedField, setFocusedField] = useState(null);
+  const [oauthEnabled, setOauthEnabled] = useState(true);
   const navigate = useNavigate();
   const location = useLocation();
   const { refreshAuth } = useAuth();
+
+  useEffect(() => {
+    fetchPublicSettings().then(data => {
+      if (data && data.ENABLE_OAUTH !== undefined) {
+        setOauthEnabled(data.ENABLE_OAUTH);
+      }
+    }).catch(err => console.error("Failed to fetch public settings", err));
+  }, []);
 
   useEffect(() => {
     // If we're redirected from OAuth callback, we'll have a token in the URL
@@ -110,52 +214,40 @@ const Login = () => {
 
       {/* ─── Left Panel: Branding ─── */}
       <div className="hidden lg:flex w-[48%] relative flex-col justify-center items-center overflow-hidden" 
-           style={{ background: 'linear-gradient(145deg, #3A6B8E 0%, #4F85AC 40%, #5D94B8 100%)' }}>
+           style={{ background: 'linear-gradient(145deg, #070B19 0%, #101B36 40%, #152648 100%)' }}>
         
-        {/* Floating code snippets */}
-        {floatingSnippets.map((snippet, i) => (
-          <div
-            key={i}
-            className="absolute font-mono text-xs text-white/[0.12] whitespace-nowrap pointer-events-none select-none"
-            style={{
-              left: `${8 + (i * 9) % 80}%`,
-              animation: `float-up ${18 + i * 2.5}s linear infinite`,
-              animationDelay: `${i * 1.8}s`,
-            }}
-          >
-            {snippet}
-          </div>
-        ))}
+        {/* Animated Abstract Wave Mesh (MinIO style) */}
+        <WaveMesh />
 
         {/* Subtle grid overlay */}
-        <div className="absolute inset-0 pointer-events-none" 
+        <div className="absolute inset-0 pointer-events-none z-0" 
              style={{
-               backgroundImage: 'linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px)',
+               backgroundImage: 'linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px)',
                backgroundSize: '40px 40px',
              }} 
         />
 
         {/* Logo + Text */}
-        <div className="relative z-10 flex flex-col items-center px-12 text-center">
+        <div className="relative z-10 flex flex-col items-center px-12 text-center mt-[-40px]">
           <div style={{ animation: 'logo-float 4s ease-in-out infinite' }}>
             <img 
               src="/logo.png" 
               alt="Evocodex Logo" 
-              className="w-36 h-36 object-contain drop-shadow-2xl mb-6"
-              style={{ filter: 'drop-shadow(0 8px 24px rgba(0,0,0,0.3))' }}
+              className="w-36 h-36 object-contain drop-shadow-2xl mb-6 opacity-90"
+              style={{ filter: 'drop-shadow(0 8px 32px rgba(100,200,255,0.3))' }}
             />
           </div>
-          <h1 className="text-white text-4xl font-bold tracking-tight mb-3" style={{ fontFamily: 'Inter, sans-serif' }}>
+          <h1 className="text-white text-5xl font-extrabold tracking-tight mb-4" style={{ fontFamily: 'Inter, sans-serif', textShadow: '0 4px 24px rgba(0,0,0,0.5)' }}>
             Evocodex
           </h1>
-          <p className="text-white/70 text-base leading-relaxed max-w-xs" style={{ fontFamily: 'Inter, sans-serif' }}>
-            Real-Time Semantic Code Indexing & Intelligent Search Platform
+          <p className="text-white/80 text-lg leading-relaxed max-w-sm" style={{ fontFamily: 'Inter, sans-serif' }}>
+            High-Performance Semantic Code Indexing & Intelligent Search
           </p>
 
           {/* Feature pills */}
-          <div className="flex flex-wrap gap-2 mt-8 justify-center">
+          <div className="flex flex-wrap gap-3 mt-10 justify-center">
             {['Semantic Search', 'Code Embedding', 'Real-Time Index'].map((f) => (
-              <span key={f} className="px-3 py-1.5 text-xs font-semibold text-white/90 border border-white/20 rounded-full bg-white/[0.08] backdrop-blur-sm">
+              <span key={f} className="px-4 py-2 text-xs font-bold tracking-wide uppercase text-white/90 border border-white/10 rounded-full bg-white/[0.03] backdrop-blur-md shadow-[0_4px_12px_rgba(0,0,0,0.2)]">
                 {f}
               </span>
             ))}
@@ -163,8 +255,8 @@ const Login = () => {
         </div>
 
         {/* Bottom decorative bar */}
-        <div className="absolute bottom-0 left-0 right-0 h-1.5" 
-             style={{ background: 'linear-gradient(90deg, #E59E2D, #4F85AC, #E35876, #E59E2D)', backgroundSize: '200% 100%', animation: 'shimmer 4s linear infinite' }} 
+        <div className="absolute bottom-0 left-0 right-0 h-1.5 z-20" 
+             style={{ background: 'linear-gradient(90deg, transparent, #0EA5E9, #38BDF8, #0EA5E9, transparent)', backgroundSize: '200% 100%', animation: 'shimmer 4s linear infinite', opacity: 0.8 }} 
         />
       </div>
 
@@ -273,26 +365,30 @@ const Login = () => {
             </button>
           </form>
 
-          {/* Divider */}
-          <div className="flex items-center my-7">
-            <div className="flex-1 border-t-2 border-borderColor/20"></div>
-            <span className="px-4 text-xs font-bold text-textMuted uppercase tracking-widest">or</span>
-            <div className="flex-1 border-t-2 border-borderColor/20"></div>
-          </div>
+          {oauthEnabled && (
+            <>
+              {/* Divider */}
+              <div className="flex items-center my-7">
+                <div className="flex-1 border-t-2 border-borderColor/20"></div>
+                <span className="px-4 text-xs font-bold text-textMuted uppercase tracking-widest">or</span>
+                <div className="flex-1 border-t-2 border-borderColor/20"></div>
+              </div>
 
-          {/* SSO Button */}
-          <button 
-            type="button" 
-            onClick={() => {
-              const apiBase = getApiBaseUrl();
-              const currentOrigin = window.location.origin;
-              window.location.href = `${apiBase}/oauth/login?origin=${encodeURIComponent(currentOrigin)}`;
-            }}
-            className="sso-btn w-full flex justify-center items-center gap-2.5 h-[48px] border-2 border-borderColor bg-bgPanel text-[15px] font-bold text-textMain hover:bg-bgHover"
-          >
-            <Shield size={18} />
-            Continue with SSO
-          </button>
+              {/* SSO Button */}
+              <button 
+                type="button" 
+                onClick={() => {
+                  const apiBase = getApiBaseUrl();
+                  const currentOrigin = window.location.origin;
+                  window.location.href = `${apiBase}/oauth/login?origin=${encodeURIComponent(currentOrigin)}`;
+                }}
+                className="sso-btn w-full flex justify-center items-center gap-2.5 h-[48px] border-2 border-borderColor bg-bgPanel text-[15px] font-bold text-textMain hover:bg-bgHover"
+              >
+                <Shield size={18} />
+                Continue with SSO
+              </button>
+            </>
+          )}
 
           {/* Footer text */}
           <p className="text-center text-xs text-textMuted mt-8" style={{ fontFamily: 'Inter, sans-serif' }}>

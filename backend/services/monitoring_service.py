@@ -3,6 +3,7 @@
 import pathlib
 import shutil
 
+import json
 import asyncpg
 
 from backend.scripts.drop_db import drop
@@ -41,6 +42,40 @@ async def get_indexing_history(db_pool: asyncpg.Pool) -> list[dict]:
         )
 
     return history
+
+
+async def get_webhook_logs(db_pool: asyncpg.Pool, limit: int = 50, offset: int = 0) -> list[dict]:
+    async with db_pool.acquire() as conn:
+        records = await conn.fetch(
+            """
+            SELECT id, request_ip, headers, payload, status_code, response, created_at
+            FROM webhook_logs
+            ORDER BY created_at DESC
+            LIMIT $1 OFFSET $2
+            """,
+            limit, offset
+        )
+        
+        # Get total count
+        count_record = await conn.fetchrow("SELECT COUNT(*) as total FROM webhook_logs")
+        total = count_record["total"] if count_record else 0
+
+    logs = []
+    for r in records:
+        logs.append(
+            {
+                "id": r["id"],
+                "request_ip": r["request_ip"],
+                "headers": json.loads(r["headers"]) if r["headers"] else {},
+                "payload": json.loads(r["payload"]) if r["payload"] else None,
+                "status_code": r["status_code"],
+                "response": json.loads(r["response"]) if r["response"] else {},
+                "created_at": (
+                    (r["created_at"].isoformat() + "Z") if r["created_at"] else None
+                ),
+            }
+        )
+    return {"logs": logs, "total": total}
 
 
 async def reset_database() -> dict:

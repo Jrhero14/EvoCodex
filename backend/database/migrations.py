@@ -75,7 +75,7 @@ async def run_migrations(conn: asyncpg.Connection) -> None:
     # Seed default roles
     default_roles = [
         ("admin", "Full access to all menus and operations"),
-        ("maintener", "Can create, edit, delete — but no access to Users menu"),
+        ("maintener", "Can create, edit, delete — but not accesible to settings"),
         ("guest", "View-only access to Query, Database, and Projects"),
     ]
     for role_name, role_desc in default_roles:
@@ -218,3 +218,28 @@ async def run_migrations(conn: asyncpg.Connection) -> None:
         default_included,
         default_excluded,
     )
+
+    # ── app_settings ────────────────────────────────────────────────────────
+    await conn.execute("""
+        CREATE TABLE IF NOT EXISTS app_settings (
+            key VARCHAR(100) PRIMARY KEY,
+            value TEXT NOT NULL,
+            category VARCHAR(50) NOT NULL,
+            is_sensitive BOOLEAN DEFAULT FALSE,
+            is_regenerable BOOLEAN DEFAULT FALSE,
+            description TEXT,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+    # ── webhook_logs ────────────────────────────────────────────────────────
+    await conn.execute("""
+        CREATE TABLE IF NOT EXISTS webhook_logs (
+            id SERIAL PRIMARY KEY,
+            request_ip TEXT,
+            headers JSONB,
+            payload JSONB,
+            status_code INTEGER,
+            response JSONB,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)

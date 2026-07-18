@@ -5,6 +5,11 @@ from pgvector.asyncpg import register_vector
 
 load_dotenv()
 
+def get_config(key: str, default: str = "") -> str:
+    """Get config from DB cache (via settings_service) -> env -> default."""
+    from backend.services.settings_service import get_config as _get_config
+    return _get_config(key, default)
+
 SOURCE_PATH = pathlib.Path(
     os.getenv("COCOINDEX_SOURCE_PATH", str(pathlib.Path(__file__).parent.parent.parent))
 )
@@ -39,6 +44,7 @@ JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "super-secret-key-for-local-dev-onl
 OAUTH_PROVIDER = os.getenv("OAUTH_PROVIDER")
 OAUTH_CLIENT_ID = os.getenv("OAUTH_CLIENT_ID")
 OAUTH_CLIENT_SECRET = os.getenv("OAUTH_CLIENT_SECRET")
+OAUTH_WELL_KNOWN_URL = os.getenv("OAUTH_WELL_KNOWN_URL")
 OAUTH_DOMAIN = os.getenv("OAUTH_DOMAIN")
 OAUTH_REALM = os.getenv("OAUTH_REALM")
 REDIRECT_URL = os.getenv("REDIRECT_URL", "http://localhost:5173/login")

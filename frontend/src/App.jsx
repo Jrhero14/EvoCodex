@@ -8,7 +8,8 @@ import DatabaseView from './pages/DatabaseView';
 import Projects from './pages/Projects';
 import ProjectDetails from './pages/ProjectDetails';
 import Templates from './pages/Templates';
-import Users from './pages/Users';
+
+import Settings from './pages/Settings';
 import { ToastProvider } from './context/ToastContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 
@@ -44,7 +45,8 @@ function AppRoutes() {
       <Route path="/projects" element={<PrivateRoute requiredMenu="projects"><Projects /></PrivateRoute>} />
       <Route path="/projects/:projectName/:branchName" element={<PrivateRoute requiredMenu="projects"><ProjectDetails /></PrivateRoute>} />
       <Route path="/templates" element={<PrivateRoute requiredMenu="templates"><Templates /></PrivateRoute>} />
-      <Route path="/users" element={<PrivateRoute requiredMenu="users"><Users /></PrivateRoute>} />
+
+      <Route path="/settings" element={<PrivateRoute requiredMenu="settings"><Settings /></PrivateRoute>} />
       
       <Route path="/" element={<Navigate to="/query" replace />} />
     </Routes>

@@ -14,6 +14,7 @@ from pgvector.asyncpg import register_vector
 from cocoindex.ops.litellm import LiteLLMEmbedder
 
 from backend.api import dependencies as deps
+from backend.services import settings_service
 from backend.api.dependencies import check_role_access
 from backend.core.config import DATABASE_URL, EMBED_MODEL, JWT_SECRET_KEY
 from backend.database.migrations import run_migrations
@@ -30,6 +31,7 @@ from backend.api.controllers import (
     template_controller,
     user_controller,
     role_controller,
+    settings_controller,
 )
 
 
@@ -54,6 +56,9 @@ async def lifespan(application: FastAPI):
         statement_cache_size=0,  # Required for Supabase transaction pooler
     )
 
+    # Seed app settings from environment variables
+    await settings_service.seed_settings_from_env(deps.db_pool)
+
     yield
 
     await deps.db_pool.close()
@@ -62,7 +67,7 @@ async def lifespan(application: FastAPI):
 # ── App & Middleware ────────────────────────────────────────────────────────
 
 app = FastAPI(
-    title="CocoIndex Webhook Service", 
+    title="Evocodex Swagger", 
     lifespan=lifespan,
     docs_url="/api/docs",
     openapi_url="/api/openapi.json",
@@ -126,6 +131,7 @@ api_router.include_router(database_controller.router)
 api_router.include_router(monitoring_controller.router)
 api_router.include_router(user_controller.router)
 api_router.include_router(role_controller.router)
+api_router.include_router(settings_controller.router)
 
 app.include_router(api_router)
 

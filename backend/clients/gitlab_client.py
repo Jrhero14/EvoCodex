@@ -5,7 +5,7 @@ import urllib.parse
 
 import httpx
 
-from backend.core.config import GITLAB_PAT
+from backend.core.config import GITLAB_PAT, get_config
 
 
 async def fetch_project_info(repo_url: str, branch: str) -> dict:
@@ -26,8 +26,9 @@ async def fetch_project_info(repo_url: str, branch: str) -> dict:
     api_url = f"https://{host}/api/v4/projects/{encoded_path}"
 
     headers = {}
-    if GITLAB_PAT:
-        headers["PRIVATE-TOKEN"] = GITLAB_PAT
+    pat = get_config("GITLAB_PAT", GITLAB_PAT)
+    if pat:
+        headers["PRIVATE-TOKEN"] = pat
 
     async with httpx.AsyncClient() as client:
         # Fetch project metadata
@@ -87,8 +88,9 @@ async def fetch_project_tree(repo_url: str, branch: str = "") -> list[dict]:
     # GET /projects/:id/repository/tree?recursive=true&per_page=100
     
     headers = {}
-    if GITLAB_PAT:
-        headers["PRIVATE-TOKEN"] = GITLAB_PAT
+    pat = get_config("GITLAB_PAT", GITLAB_PAT)
+    if pat:
+        headers["PRIVATE-TOKEN"] = pat
         
     async with httpx.AsyncClient() as client:
         # We need the default branch if branch is empty
@@ -142,8 +144,9 @@ async def fetch_project_branches(repo_url: str) -> list[str]:
     api_url = f"https://{host}/api/v4/projects/{encoded_path}/repository/branches"
 
     headers = {}
-    if GITLAB_PAT:
-        headers["PRIVATE-TOKEN"] = GITLAB_PAT
+    pat = get_config("GITLAB_PAT", GITLAB_PAT)
+    if pat:
+        headers["PRIVATE-TOKEN"] = pat
 
     async with httpx.AsyncClient() as client:
         res = await client.get(api_url, headers=headers)

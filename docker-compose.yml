@@ -25,21 +25,35 @@ services:
       - "8000:8000"
     environment:
       # --- Konfigurasi Database (otomatis terhubung ke db di atas) ---
-      POSTGRES_URL: postgresql://${DB_USER:-user}:${DB_PASSWORD:-password}@db:5432/${DB_NAME:-dbname}
+      POSTGRES_URL: postgresql://${DB_USER:-evocodex}:${DB_PASSWORD:-codexevo12345}@db:5432/${DB_NAME:-evocodex}
       
       # --- Authentication ---
-      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-ganti_dengan_secret_kuat}
-      OAUTH_CLIENT_SECRET: ${OAUTH_CLIENT_SECRET:-}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-tN2FrZggM5Aeaqj4Etjj1MkwJ7/V7pMfLB99LZtWj5Q=}
+      AGENT_API_KEY: ${AGENT_API_KEY:-EiMoeyrltoRFqunI1QOE1SHfsXttGHoIsDZhNqbiY0I=}
+      
+      # --- OAuth Config ---
+      ENABLE_OAUTH: ${ENABLE_OAUTH:-true}
+      OAUTH_PROVIDER: ${OAUTH_PROVIDER:-keycloak}
+      OAUTH_CLIENT_ID: ${OAUTH_CLIENT_ID:-vodex}
+      OAUTH_CLIENT_SECRET: ${OAUTH_CLIENT_SECRET:-imzVAtEkF6hMdjDCCxox9rmNZVWsxGcH}
+      OAUTH_WELL_KNOWN_URL: ${OAUTH_WELL_KNOWN_URL:-https://keycloakpg.clientsolve.com/realms/Besmart/.well-known/openid-configuration}
+      OAUTH_DOMAIN: ${OAUTH_DOMAIN:-https://keycloakpg.clientsolve.com}
+      OAUTH_REALM: ${OAUTH_REALM:-Besmart}
+      REDIRECT_URL: ${REDIRECT_URL:-http://localhost:8080/login}
+      BACKEND_URL: ${BACKEND_URL:-http://localhost:8080}
       
       # --- Integrasi AI & Gitlab ---
-      GITLAB_PAT: ${GITLAB_PAT:-}
-      GITLAB_WEBHOOK_SECRET: ${GITLAB_WEBHOOK_SECRET:-}
-      HF_TOKEN: ${HF_TOKEN:-}
-      GOOGLE_CLOUD_PROJECT: ${GOOGLE_CLOUD_PROJECT:-}
-      VERTEX_PROJECT: ${VERTEX_PROJECT:-}
+      GITLAB_PAT: ${GITLAB_PAT:-sQJCn9f9nWzyYd85sMPu}
+      GITLAB_WEBHOOK_SECRET: ${GITLAB_WEBHOOK_SECRET:-6AaszDvKH1ja/MVnsKkyqhik2IjoIdkQ2Wp0xLxrdqY=}
+      HF_TOKEN: ${HF_TOKEN:-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}
+      GOOGLE_CLOUD_PROJECT: ${GOOGLE_CLOUD_PROJECT:-bsm-prod-svc}
+      VERTEX_PROJECT: ${VERTEX_PROJECT:-bsm-prod-svc}
+      COCOINDEX_EMBEDDING_PROVIDER: ${COCOINDEX_EMBEDDING_PROVIDER:-vertex}
       
-      # Frontend Config yang mungkin dibutuhkan
-      VITE_API_URL: ${VITE_API_URL:-/api}
+      # --- Frontend Config ---
+      VITE_API_URL: ${VITE_API_URL:-http://localhost:8080}
+      VITE_PORT: ${VITE_PORT:-3001}
+      VITE_HOST: ${VITE_HOST:-localhost}
     restart: always
 
 volumes:

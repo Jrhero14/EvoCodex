@@ -1,9 +1,11 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect } from 'react';
 import {
   ReactFlow,
   Background,
   Handle,
   Position,
+  ReactFlowProvider,
+  useReactFlow,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { GitBranch, Database, Cpu, CheckCircle2, XCircle, Loader2 } from 'lucide-react';
@@ -256,6 +258,19 @@ function PipelineNode({ data }) {
 
 const nodeTypes = { pipeline: PipelineNode };
 
+function FitViewUpdater({ phases }) {
+  const { fitView } = useReactFlow();
+  
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      fitView({ padding: 0.3, maxZoom: 1 });
+    }, 50);
+    return () => clearTimeout(timer);
+  }, [phases, fitView]);
+  
+  return null;
+}
+
 const BuildPipelineFlow = ({ logText, jobStatus }) => {
   const phases = useMemo(
     () => parsePipelinePhases(logText, jobStatus),
@@ -360,24 +375,27 @@ const BuildPipelineFlow = ({ logText, jobStatus }) => {
         .react-flow__attribution { display: none !important; }
         .react-flow__edge-path { transition: stroke 0.4s ease, stroke-width 0.3s ease; }
       `}</style>
-      <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        nodeTypes={nodeTypes}
-        panOnDrag={false}
-        zoomOnScroll={false}
-        zoomOnPinch={false}
-        zoomOnDoubleClick={false}
-        preventScrolling={false}
-        nodesDraggable={false}
-        nodesConnectable={false}
-        elementsSelectable={false}
-        proOptions={{ hideAttribution: true }}
-        fitView
-        fitViewOptions={{ padding: 0.3 }}
-      >
-        <Background color="#D5CFC6" gap={24} size={1} style={{ opacity: 0.4 }} />
-      </ReactFlow>
+      <ReactFlowProvider>
+        <ReactFlow
+          nodes={nodes}
+          edges={edges}
+          nodeTypes={nodeTypes}
+          panOnDrag={false}
+          zoomOnScroll={false}
+          zoomOnPinch={false}
+          zoomOnDoubleClick={false}
+          preventScrolling={false}
+          nodesDraggable={false}
+          nodesConnectable={false}
+          elementsSelectable={false}
+          proOptions={{ hideAttribution: true }}
+          fitView
+          fitViewOptions={{ padding: 0.3 }}
+        >
+          <Background color="#D5CFC6" gap={24} size={1} style={{ opacity: 0.4 }} />
+          <FitViewUpdater phases={phases} />
+        </ReactFlow>
+      </ReactFlowProvider>
     </div>
   );
 };

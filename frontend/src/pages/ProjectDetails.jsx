@@ -205,11 +205,18 @@ const ProjectDetails = () => {
     if (!projectMetadata) return;
     setIsIndexing(true);
     try {
-      await triggerForceReindex(projectMetadata.repository_url, projectMetadata.current_branch);
+      const res = await triggerForceReindex(projectMetadata.repository_url, projectMetadata.current_branch);
       showSuccess('Job Started', 'Indexing is running in the background.', 3000);
       loadJobs(); // Refresh jobs to show IN_PROGRESS
       window.dispatchEvent(new Event('job-started')); // Notify Sidebar to refresh immediately
-      setActiveTab('builds'); // Auto-switch to builds view
+      
+      setSearchParams(prev => {
+        prev.set('tab', 'builds');
+        if (res?.job_id) {
+          prev.set('jobId', res.job_id.toString());
+        }
+        return prev;
+      });
     } catch (err) {
       showError('Error', err.response?.data?.detail || err.message || 'Failed to start indexing', 5000);
     } finally {
@@ -539,7 +546,7 @@ const ProjectDetails = () => {
                     <h3 className="text-lg font-bold text-textMain flex items-center gap-2">Console Output - Job #{selectedJob.id}</h3>
                     {selectedJob.status === 'IN_PROGRESS' && <span className="bg-primary/20 text-primary text-xs px-2 py-1 rounded font-bold animate-pulse">RUNNING...</span>}
                   </div>
-                  <BuildPipelineFlow logText={jobLogs} jobStatus={selectedJob.status} />
+                  <BuildPipelineFlow key={selectedJob.id} logText={jobLogs} jobStatus={selectedJob.status} />
                   <div className="flex-1 bg-[#1e1e1e] rounded-lg p-4 overflow-auto border border-borderColor shadow-inner">
                     <pre className="text-gray-300 font-mono text-[13px] leading-relaxed whitespace-pre-wrap">{jobLogs}</pre>
                     {selectedJob.status === 'IN_PROGRESS' && (

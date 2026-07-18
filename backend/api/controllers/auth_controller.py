@@ -58,7 +58,7 @@ async def oauth_login(request: Request, origin: str = None):
         state_payload = base64.urlsafe_b64encode(origin.encode("utf-8")).decode("utf-8")
 
     try:
-        login_url = auth_service.get_oauth_login_url(redirect_uri, state_payload)
+        login_url = await auth_service.get_oauth_login_url(redirect_uri, state_payload)
         return RedirectResponse(url=login_url)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -88,7 +88,7 @@ async def oauth_logout(request: Request, origin: str = None):
     logout_redirect = f"{base_url}/login"
     
     try:
-        logout_url = auth_service.get_oauth_logout_url(logout_redirect)
+        logout_url = await auth_service.get_oauth_logout_url(logout_redirect)
         return RedirectResponse(url=logout_url)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))

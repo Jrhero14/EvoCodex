@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { fetchUsers, addUser, updateUser, deleteUser, fetchRoles } from '../services/api';
-import { Trash2, Plus, Edit2, Eye, EyeOff } from 'lucide-react';
+import { Trash2, Plus, Edit2, Eye, EyeOff, Search } from 'lucide-react';
 
-const Users = () => {
+const Users = ({ isNested = false }) => {
   const [users, setUsers] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
   const [roles, setRoles] = useState([]);
   const [loading, setLoading] = useState(true);
   
@@ -142,15 +143,31 @@ const Users = () => {
     }
   };
 
+  const filteredUsers = users.filter(u => u.username.toLowerCase().includes(searchQuery.toLowerCase()));
+
   return (
-    <div className="p-8 max-w-7xl mx-auto">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-textMain">User Management</h1>
+    <div className={isNested ? "pt-2" : "p-8 max-w-7xl mx-auto"}>
+      <div className="flex justify-between items-center mb-4 gap-4">
+        <div className="flex items-center gap-4 flex-1">
+          {!isNested && (
+            <h1 className="text-2xl font-bold text-textMain">User Management</h1>
+          )}
+          <div className="relative flex-1 max-w-sm">
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-textMuted" />
+            <input
+              type="text"
+              placeholder="Search users..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="input-field pl-9 h-8 text-sm w-full"
+            />
+          </div>
+        </div>
         <button 
           onClick={openAddModal}
-          className="btn-primary flex items-center gap-2 w-auto px-4"
+          className="btn-primary flex items-center gap-1.5 w-auto px-3 py-1.5 text-sm h-8 shrink-0"
         >
-          <Plus /> Add User
+          <Plus size={16} /> Add User
         </button>
       </div>
 
@@ -168,12 +185,12 @@ const Users = () => {
               </tr>
             </thead>
             <tbody>
-              {users.length === 0 ? (
+              {filteredUsers.length === 0 ? (
                 <tr>
                   <td colSpan="4" className="px-6 py-8 text-center text-textMuted">No users found.</td>
                 </tr>
               ) : (
-                users.map((u) => (
+                filteredUsers.map((u) => (
                   <tr key={u.id} className="border-b border-borderSubtle hover:bg-bgHover transition-colors">
                     <td className="px-6 py-4 font-medium text-textMain">
                       <div className="flex items-center gap-2">

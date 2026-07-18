@@ -17,6 +17,15 @@ async def get_monitoring_history(token: dict = Depends(deps.verify_token)):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@router.get("/monitoring/webhooks")
+async def get_webhook_logs(limit: int = 50, offset: int = 0, token: dict = Depends(deps.verify_token)):
+    try:
+        data = await monitoring_service.get_webhook_logs(deps.db_pool, limit, offset)
+        return {"status": "success", "data": data}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @router.delete("/reset")
 async def reset_database(token: dict = Depends(deps.verify_token)):
     try:
